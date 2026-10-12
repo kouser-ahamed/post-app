@@ -1,169 +1,149 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
   HiOutlineArrowLeft,
+  HiOutlineExclamation,
   HiOutlineEye,
+  HiOutlinePencilAlt,
   HiOutlineTag,
   HiOutlineThumbDown,
   HiOutlineThumbUp,
+  HiOutlineTrash,
   HiOutlineUser,
+  HiOutlineX,
 } from 'react-icons/hi';
-import { fetchPostById } from '../services/api';
+import { deletePost, updatePost } from '../services/api';
 import type { Post } from '../types';
 
 interface PostDetailsProps {
-  postId: number;
-  initialPost?: Post;
+  post: Post;
   onBack: () => void;
+  onUpdatePost: (updatedPost: Post) => void;
+  onDeletePost: (id: number) => void;
 }
 
-export const PostDetails = ({ postId, initialPost, onBack }: PostDetailsProps) => {
-  const [fetchedPost, setFetchedPost] = useState<Post | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(!initialPost);
-  const [error, setError] = useState<string | null>(null);
+export const PostDetails = ({
+  post,
+  onBack,
+  onUpdatePost,
+  onDeletePost,
+}: PostDetailsProps) => {
+  const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [editTitle, setEditTitle] = useState<string>(post.title);
+  const [editBody, setEditBody] = useState<string>(post.body);
+  const [editTags, setEditTags] = useState<string>(post.tags.join(', '));
+  const [actionError, setActionError] = useState<string | null>(null);
 
-  const post = initialPost && initialPost.id === postId ? initialPost : fetchedPost;
+  const handleOpenEditModal = () => {
+    setEditTitle(post.title);
+    setEditBody(post.body);
+    setEditTags(post.tags.join(', '));
+    setActionError(null);
+    setIsEditModalOpen(true);
+  };
 
-  useEffect(() => {
-    if (initialPost && initialPost.id === postId) {
+  const handleCloseEditModal = () => {
+    if (isSubmitting) return;
+    setIsEditModalOpen(false);
+    setActionError(null);
+  };
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editTitle.trim() || !editBody.trim()) {
+      setActionError('Title and body cannot be empty.');
       return;
     }
 
-    const controller = new AbortController();
+    try {
+      setIsSubmitting(true);
+      setActionError(null);
 
-    const loadPost = async (): Promise<void> => {
-      try {
-        setIsLoading(true);
-        setError(null);
+      const parsedTags = editTags
+        .split(',')
+        .map((tag) => tag.trim())
+        .filter(Boolean);
 
-        const data = await fetchPostById(postId, controller.signal);
+      const payload = {
+        title: editTitle.trim(),
+        body: editBody.trim(),
+        tags: parsedTags,
+      };
 
-        if (controller.signal.aborted) return;
+      const updated = await updatePost(post.id, payload, post);
 
-        setFetchedPost(data);
-      } catch (err: unknown) {
-        const isAbort =
-          controller.signal.aborted ||
-          (typeof err === 'object' && err !== null && 'name' in err && (err as { name: string }).name === 'AbortError');
+      onUpdatePost({
+        ...post,
+        ...updated,
+        ...payload,
+      });
+      setIsEditModalOpen(false);
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Failed to update post');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
-        if (isAbort) return;
-
-        setError(err instanceof Error ? err.message : 'An unexpected error occurred');
-      } finally {
-        if (!controller.signal.aborted) {
-          setIsLoading(false);
-        }
-      }
-    };
-
-    loadPost();
-
-    return () => {
-      controller.abort();
-    };
-  }, [postId, initialPost]);
-
-  if (isLoading) {
-    return (
-      <div className="mx-auto max-w-4xl">
-        <button
-          onClick={onBack}
-          className="mb-6 inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
-        >
-          <HiOutlineArrowLeft className="h-4 w-4" />
-          Back to Posts
-        </button>
-        <div className="animate-pulse rounded-3xl border border-slate-200/80 bg-white p-8 shadow-sm">
-          <div className="flex gap-2">
-            <div className="h-6 w-20 rounded-full bg-slate-200" />
-            <div className="h-6 w-24 rounded-full bg-slate-200" />
-          </div>
-          <div className="mt-6 h-8 w-3/4 rounded bg-slate-200" />
-          <div className="mt-6 space-y-3">
-            <div className="h-4 w-full rounded bg-slate-100" />
-            <div className="h-4 w-full rounded bg-slate-100" />
-            <div className="h-4 w-4/5 rounded bg-slate-100" />
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="mx-auto max-w-4xl">
-        <button
-          onClick={onBack}
-          className="mb-6 inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
-        >
-          <HiOutlineArrowLeft className="h-4 w-4" />
-          Back to Posts
-        </button>
-        <div className="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-center text-rose-700">
-          <p className="font-semibold">{error}</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!post) {
-    return (
-      <div className="mx-auto max-w-4xl">
-        <button
-          onClick={onBack}
-          className="mb-6 inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
-        >
-          <HiOutlineArrowLeft className="h-4 w-4" />
-          Back to Posts
-        </button>
-        <div className="animate-pulse rounded-3xl border border-slate-200/80 bg-white p-8 shadow-sm">
-          <div className="flex gap-2">
-            <div className="h-6 w-20 rounded-full bg-slate-200" />
-            <div className="h-6 w-24 rounded-full bg-slate-200" />
-          </div>
-          <div className="mt-6 h-8 w-3/4 rounded bg-slate-200" />
-          <div className="mt-6 space-y-3">
-            <div className="h-4 w-full rounded bg-slate-100" />
-            <div className="h-4 w-full rounded bg-slate-100" />
-            <div className="h-4 w-4/5 rounded bg-slate-100" />
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const handleConfirmDelete = async () => {
+    try {
+      setIsSubmitting(true);
+      setActionError(null);
+      await deletePost(post.id);
+      setIsDeleteModalOpen(false);
+      onDeletePost(post.id);
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Failed to delete post');
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="mx-auto max-w-4xl">
-      <button
-        onClick={onBack}
-        className="mb-6 inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
-      >
-        <HiOutlineArrowLeft className="h-4 w-4" />
-        Back to Posts
-      </button>
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+        <button
+          onClick={onBack}
+          className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
+        >
+          <HiOutlineArrowLeft className="h-4 w-4" />
+          Back to Posts
+        </button>
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleOpenEditModal}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
+          >
+            <HiOutlinePencilAlt className="h-4 w-4 text-slate-500" />
+            Edit
+          </button>
+
+          <button
+            onClick={() => setIsDeleteModalOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-sm font-semibold text-rose-700 shadow-sm transition hover:bg-rose-100"
+          >
+            <HiOutlineTrash className="h-4 w-4" />
+            Delete
+          </button>
+        </div>
+      </div>
+
+      {actionError && (
+        <div className="mb-6 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-center text-sm font-medium text-rose-700">
+          {actionError}
+        </div>
+      )}
 
       <article className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm sm:p-10">
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-6">
-          <div className="flex flex-wrap items-center gap-2">
-            {post.tags.map((tag: string) => (
-              <span
-                key={tag}
-                className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700 capitalize"
-              >
-                <HiOutlineTag className="h-3 w-3" />
-                {tag}
-              </span>
-            ))}
-          </div>
-
-          <div className="flex items-center gap-3">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
-              <HiOutlineUser className="h-3.5 w-3.5" />
-              Author #{post.userId}
-            </span>
-            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-500">
-              Post ID #{post.id}
-            </span>
-          </div>
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
+            <HiOutlineUser className="h-3.5 w-3.5" />
+            Author {post.userId}
+          </span>
+          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-500">
+            Post ID {post.id}
+          </span>
         </div>
 
         <div className="mt-8 space-y-6">
@@ -175,6 +155,18 @@ export const PostDetails = ({ postId, initialPost, onBack }: PostDetailsProps) =
             <p className="text-base leading-relaxed text-slate-700 sm:text-lg">
               {post.body}
             </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 pt-2">
+            {post.tags.map((tag: string) => (
+              <span
+                key={tag}
+                className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700 capitalize"
+              >
+                <HiOutlineTag className="h-3 w-3" />
+                {tag}
+              </span>
+            ))}
           </div>
         </div>
 
@@ -210,6 +202,144 @@ export const PostDetails = ({ postId, initialPost, onBack }: PostDetailsProps) =
           </div>
         </div>
       </article>
+
+      {isEditModalOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
+        >
+          <div
+            onClick={handleCloseEditModal}
+            className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity"
+          />
+
+          <div className="relative w-full max-w-2xl rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl transition-all sm:p-8">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-5">
+              <div>
+                <h2 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+                  Edit Post
+                </h2>
+                <p className="mt-1 text-xs text-slate-500">
+                  Update title, content, and category tags.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleCloseEditModal}
+                disabled={isSubmitting}
+                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 disabled:opacity-50"
+              >
+                <HiOutlineX className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEdit} className="mt-6 space-y-5">
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700">
+                  Title
+                </label>
+                <input
+                  type="text"
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  required
+                  className="mt-1.5 block w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-slate-900 shadow-sm focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700">
+                  Body
+                </label>
+                <textarea
+                  rows={5}
+                  value={editBody}
+                  onChange={(e) => setEditBody(e.target.value)}
+                  required
+                  className="mt-1.5 block w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-slate-900 shadow-sm focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700">
+                  Tags (comma separated)
+                </label>
+                <input
+                  type="text"
+                  value={editTags}
+                  onChange={(e) => setEditTags(e.target.value)}
+                  className="mt-1.5 block w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-slate-900 shadow-sm focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 border-t border-slate-100 pt-5">
+                <button
+                  type="button"
+                  onClick={handleCloseEditModal}
+                  disabled={isSubmitting}
+                  className="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 disabled:opacity-50"
+                >
+                  {isSubmitting ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {isDeleteModalOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
+        >
+          <div
+            onClick={() => !isSubmitting && setIsDeleteModalOpen(false)}
+            className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity"
+          />
+
+          <div className="relative w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl transition-all sm:p-8">
+            <div className="flex items-start gap-4">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-rose-100 text-rose-600">
+                <HiOutlineExclamation className="h-6 w-6" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-lg font-bold text-slate-900">Delete Post</h3>
+                <p className="text-sm text-slate-600">
+                  Are you sure you want to delete this post? This action cannot be undone.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-8 flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setIsDeleteModalOpen(false)}
+                disabled={isSubmitting}
+                className="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                disabled={isSubmitting}
+                className="inline-flex items-center gap-2 rounded-xl bg-rose-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-rose-700 disabled:opacity-50"
+              >
+                {isSubmitting ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

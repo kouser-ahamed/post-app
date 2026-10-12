@@ -19,3 +19,21 @@ export interface PostsResponse {
   skip: number;
   limit: number;
 }
+
+export interface CreatePostPayload {
+  title: string;
+  body: string;
+  tags: string[];
+  userId: number;
+}
+
+export interface UpdatePostPayload {
+  title?: string;
+  body?: string;
+  tags?: string[];
+}
+
+export interface DeletePostResponse extends Post {
+  isDeleted: boolean;
+  deletedOn: string;
+}

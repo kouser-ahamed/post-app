@@ -10,17 +10,6 @@ export const PostCard = ({ post, onSelect }: PostCardProps) => {
   return (
     <article className="flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg">
       <div className="space-y-4">
-        <div className="flex flex-wrap items-center gap-2">
-          {post.tags.map((tag: string) => (
-            <span
-              key={tag}
-              className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700 capitalize"
-            >
-              #{tag}
-            </span>
-          ))}
-        </div>
-
         <div className="space-y-2">
           <h2 className="text-xl font-bold tracking-tight text-slate-900 capitalize">
             {post.title}
@@ -28,6 +17,17 @@ export const PostCard = ({ post, onSelect }: PostCardProps) => {
           <p className="line-clamp-4 text-sm leading-relaxed text-slate-600">
             {post.body}
           </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          {post.tags.map((tag: string) => (
+            <span
+              key={tag}
+              className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700 capitalize"
+            >
+              {tag}
+            </span>
+          ))}
         </div>
       </div>
 
@@ -53,7 +53,7 @@ export const PostCard = ({ post, onSelect }: PostCardProps) => {
 
             <span className="inline-flex items-center gap-1 rounded bg-slate-100 px-1.5 py-0.5 text-[11px] font-medium text-slate-500">
               <HiOutlineUser className="h-3 w-3" />
-              User #{post.userId}
+              User {post.userId}
             </span>
           </div>
         </div>
