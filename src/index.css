@@ -1,6 +1,25 @@
 @import "tailwindcss";
 @plugin "daisyui";
 
-html {
-  scrollbar-gutter: stable;
+html,
+body {
+  overflow-x: hidden;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE / Edge */
+  -webkit-overflow-scrolling: touch; /* Smooth iOS momentum scrolling */
+}
+
+/* Hide scrollbar for Chrome, Safari, Edge, Opera */
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+*::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+/* Fallback for all scrollable containers */
+* {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
