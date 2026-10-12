@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import {
   HiOutlineChevronLeft,
   HiOutlineChevronRight,
@@ -39,14 +39,6 @@ export const PostList = ({
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    return () => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
-    };
-  }, []);
 
   const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
@@ -138,7 +130,7 @@ export const PostList = ({
 
   const getPageNumbers = () => {
     const pages: (number | string)[] = [];
-    if (totalPages <= 7) {
+    if (totalPages <= 5) {
       for (let i = 1; i <= totalPages; i++) pages.push(i);
     } else {
       pages.push(1);
@@ -154,18 +146,18 @@ export const PostList = ({
 
   return (
     <div>
-      <header className="mb-8 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+      <header className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
+          <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl md:text-4xl">
             Community Posts
           </h1>
-          <p className="mt-2 text-base text-slate-600">
+          <p className="mt-1.5 text-sm text-slate-600 sm:text-base">
             Explore thoughts, ideas, and updates from creators.
           </p>
         </div>
 
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <div className="relative w-full sm:w-72">
+        <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
+          <div className="relative w-full sm:w-64 md:w-72">
             <HiOutlineSearch className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
@@ -187,7 +179,7 @@ export const PostList = ({
 
           <button
             onClick={handleOpenModal}
-            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800"
+            className="inline-flex w-full shrink-0 items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 sm:w-auto"
           >
             <HiOutlinePlus className="h-5 w-5" />
             Create Post
@@ -196,7 +188,7 @@ export const PostList = ({
       </header>
 
       {debouncedQuery && (
-        <div className="mb-6 flex items-center justify-between rounded-2xl border border-slate-200/80 bg-white px-4 py-3 text-sm text-slate-600 shadow-sm">
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-slate-200/80 bg-white p-3.5 text-sm text-slate-600 shadow-sm sm:px-4">
           <span>
             Search results for: <strong className="text-slate-900">"{debouncedQuery}"</strong>
             {!isLoading && ` (${filteredPosts.length} found)`}
@@ -211,13 +203,13 @@ export const PostList = ({
       )}
 
       {isLoading && (
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: POSTS_PER_PAGE }).map((_, index) => (
             <div
               key={`skeleton-${index}`}
-              className="h-72 animate-pulse rounded-2xl border border-slate-200/60 bg-white p-6 shadow-sm"
+              className="h-68 animate-pulse rounded-2xl border border-slate-200/60 bg-white p-5 shadow-sm sm:h-72 sm:p-6"
             >
-              <div className="mt-4 h-6 w-3/4 rounded bg-slate-200" />
+              <div className="mt-2 h-5 w-3/4 rounded bg-slate-200" />
               <div className="mt-4 space-y-2">
                 <div className="h-4 w-full rounded bg-slate-100" />
                 <div className="h-4 w-5/6 rounded bg-slate-100" />
@@ -239,11 +231,11 @@ export const PostList = ({
       )}
 
       {!isLoading && !error && filteredPosts.length === 0 && (
-        <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center text-slate-500 shadow-sm">
+        <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-slate-500 shadow-sm sm:p-12">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
             <HiOutlineSearch className="h-6 w-6" />
           </div>
-          <p className="mt-4 text-lg font-medium text-slate-700">
+          <p className="mt-4 text-base font-medium text-slate-700 sm:text-lg">
             {debouncedQuery
               ? `No posts found matching "${debouncedQuery}"`
               : 'No posts available right now.'}
@@ -261,21 +253,21 @@ export const PostList = ({
 
       {!isLoading && !error && paginatedPosts.length > 0 && (
         <>
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
             {paginatedPosts.map((post) => (
               <PostCard key={post.id} post={post} onSelect={onSelectPost} />
             ))}
           </div>
 
           {totalPages > 1 && (
-            <nav className="mt-12 flex flex-wrap items-center justify-center gap-2">
+            <nav className="mt-10 flex flex-wrap items-center justify-center gap-1.5 sm:mt-12 sm:gap-2">
               <button
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
-                className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 sm:px-3.5 sm:text-sm"
               >
                 <HiOutlineChevronLeft className="h-4 w-4" />
-                Previous
+                <span className="hidden xs:inline">Prev</span>
               </button>
 
               <div className="flex items-center gap-1">
@@ -284,7 +276,7 @@ export const PostList = ({
                     <button
                       key={pageItem}
                       onClick={() => setCurrentPage(pageItem)}
-                      className={`h-9 w-9 rounded-xl text-sm font-semibold transition ${
+                      className={`h-8 w-8 rounded-xl text-xs font-semibold transition sm:h-9 sm:w-9 sm:text-sm ${
                         currentPage === pageItem
                           ? 'bg-slate-900 text-white shadow-sm'
                           : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
@@ -293,7 +285,7 @@ export const PostList = ({
                       {pageItem}
                     </button>
                   ) : (
-                    <span key={`dots-${idx}`} className="px-2 text-sm text-slate-400">
+                    <span key={`dots-${idx}`} className="px-1 text-xs text-slate-400 sm:px-2 sm:text-sm">
                       ...
                     </span>
                   ),
@@ -303,9 +295,9 @@ export const PostList = ({
               <button
                 onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages}
-                className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 sm:px-3.5 sm:text-sm"
               >
-                Next
+                <span className="hidden xs:inline">Next</span>
                 <HiOutlineChevronRight className="h-4 w-4" />
               </button>
             </nav>
@@ -317,20 +309,20 @@ export const PostList = ({
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6"
         >
           <div
             onClick={handleCloseModal}
             className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity"
           />
 
-          <div className="relative w-full max-w-2xl rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl transition-all sm:p-8">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-5">
+          <div className="relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-3xl border border-slate-200 bg-white p-5 shadow-2xl transition-all sm:max-h-none sm:max-w-2xl sm:overflow-visible sm:p-8">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4 sm:pb-5">
               <div>
-                <h2 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+                <h2 className="text-lg font-bold tracking-tight text-slate-900 sm:text-2xl">
                   Create New Post
                 </h2>
-                <p className="mt-1 text-xs text-slate-500">
+                <p className="mt-0.5 text-xs text-slate-500">
                   Share your thoughts and updates with the community.
                 </p>
               </div>
@@ -345,12 +337,12 @@ export const PostList = ({
             </div>
 
             {submitError && (
-              <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
+              <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700 sm:text-sm">
                 {submitError}
               </div>
             )}
 
-            <form onSubmit={handleCreatePost} className="mt-6 space-y-5">
+            <form onSubmit={handleCreatePost} className="mt-5 space-y-4 sm:space-y-5">
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700">
                   Title
@@ -392,19 +384,19 @@ export const PostList = ({
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-3 border-t border-slate-100 pt-5">
+              <div className="flex items-center justify-end gap-2.5 border-t border-slate-100 pt-4 sm:pt-5">
                 <button
                   type="button"
                   onClick={handleCloseModal}
                   disabled={isSubmitting}
-                  className="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:opacity-50"
+                  className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:opacity-50 sm:px-5"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 disabled:opacity-50"
+                  className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 disabled:opacity-50 sm:px-6"
                 >
                   {isSubmitting ? 'Creating...' : 'Create Post'}
                 </button>

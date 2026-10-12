@@ -101,10 +101,10 @@ export const PostDetails = ({
 
   return (
     <div className="mx-auto max-w-4xl">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <button
           onClick={onBack}
-          className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
+          className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 sm:px-4 sm:py-2.5"
         >
           <HiOutlineArrowLeft className="h-4 w-4" />
           Back to Posts
@@ -113,7 +113,7 @@ export const PostDetails = ({
         <div className="flex items-center gap-2">
           <button
             onClick={handleOpenEditModal}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 sm:px-4 sm:py-2.5"
           >
             <HiOutlinePencilAlt className="h-4 w-4 text-slate-500" />
             Edit
@@ -121,7 +121,7 @@ export const PostDetails = ({
 
           <button
             onClick={() => setIsDeleteModalOpen(true)}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-sm font-semibold text-rose-700 shadow-sm transition hover:bg-rose-100"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-2 text-sm font-semibold text-rose-700 shadow-sm transition hover:bg-rose-100 sm:px-4 sm:py-2.5"
           >
             <HiOutlineTrash className="h-4 w-4" />
             Delete
@@ -135,8 +135,8 @@ export const PostDetails = ({
         </div>
       )}
 
-      <article className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm sm:p-10">
-        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-6">
+      <article className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm sm:p-8 md:p-10">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-5 sm:pb-6">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
             <HiOutlineUser className="h-3.5 w-3.5" />
             Author {post.userId}
@@ -146,18 +146,18 @@ export const PostDetails = ({
           </span>
         </div>
 
-        <div className="mt-8 space-y-6">
-          <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 capitalize sm:text-4xl sm:leading-tight">
+        <div className="mt-6 space-y-5 sm:mt-8 sm:space-y-6">
+          <h1 className="text-xl font-extrabold tracking-tight text-slate-900 capitalize sm:text-3xl md:text-4xl md:leading-tight">
             {post.title}
           </h1>
 
-          <div className="rounded-2xl bg-slate-50 p-6 sm:p-8">
-            <p className="text-base leading-relaxed text-slate-700 sm:text-lg">
+          <div className="rounded-2xl bg-slate-50 p-5 sm:p-7 md:p-8">
+            <p className="text-sm leading-relaxed text-slate-700 sm:text-base md:text-lg">
               {post.body}
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 pt-2">
+          <div className="flex flex-wrap items-center gap-2 pt-1">
             {post.tags.map((tag: string) => (
               <span
                 key={tag}
@@ -170,34 +170,34 @@ export const PostDetails = ({
           </div>
         </div>
 
-        <div className="mt-8 grid grid-cols-2 gap-4 border-t border-slate-100 pt-6 sm:grid-cols-3">
-          <div className="flex items-center gap-3 rounded-2xl bg-emerald-50/70 p-4">
+        <div className="mt-8 grid grid-cols-2 gap-3.5 border-t border-slate-100 pt-6 sm:grid-cols-3 sm:gap-4">
+          <div className="flex items-center gap-3 rounded-2xl bg-emerald-50/70 p-3.5 sm:p-4">
             <div className="rounded-xl bg-emerald-100 p-2 text-emerald-700">
               <HiOutlineThumbUp className="h-5 w-5" />
             </div>
             <div>
               <p className="text-xs font-medium text-slate-500">Likes</p>
-              <p className="text-lg font-bold text-slate-800">{post.reactions.likes}</p>
+              <p className="text-base font-bold text-slate-800 sm:text-lg">{post.reactions.likes}</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 rounded-2xl bg-rose-50/70 p-4">
+          <div className="flex items-center gap-3 rounded-2xl bg-rose-50/70 p-3.5 sm:p-4">
             <div className="rounded-xl bg-rose-100 p-2 text-rose-700">
               <HiOutlineThumbDown className="h-5 w-5" />
             </div>
             <div>
               <p className="text-xs font-medium text-slate-500">Dislikes</p>
-              <p className="text-lg font-bold text-slate-800">{post.reactions.dislikes}</p>
+              <p className="text-base font-bold text-slate-800 sm:text-lg">{post.reactions.dislikes}</p>
             </div>
           </div>
 
-          <div className="col-span-2 flex items-center gap-3 rounded-2xl bg-blue-50/70 p-4 sm:col-span-1">
+          <div className="col-span-2 flex items-center gap-3 rounded-2xl bg-blue-50/70 p-3.5 sm:col-span-1 sm:p-4">
             <div className="rounded-xl bg-blue-100 p-2 text-blue-700">
               <HiOutlineEye className="h-5 w-5" />
             </div>
             <div>
               <p className="text-xs font-medium text-slate-500">Total Views</p>
-              <p className="text-lg font-bold text-slate-800">{post.views.toLocaleString()}</p>
+              <p className="text-base font-bold text-slate-800 sm:text-lg">{post.views.toLocaleString()}</p>
             </div>
           </div>
         </div>
@@ -207,20 +207,20 @@ export const PostDetails = ({
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6"
         >
           <div
             onClick={handleCloseEditModal}
             className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity"
           />
 
-          <div className="relative w-full max-w-2xl rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl transition-all sm:p-8">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-5">
+          <div className="relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-3xl border border-slate-200 bg-white p-5 shadow-2xl transition-all sm:max-h-none sm:max-w-2xl sm:overflow-visible sm:p-8">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4 sm:pb-5">
               <div>
-                <h2 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+                <h2 className="text-lg font-bold tracking-tight text-slate-900 sm:text-2xl">
                   Edit Post
                 </h2>
-                <p className="mt-1 text-xs text-slate-500">
+                <p className="mt-0.5 text-xs text-slate-500">
                   Update title, content, and category tags.
                 </p>
               </div>
@@ -234,7 +234,7 @@ export const PostDetails = ({
               </button>
             </div>
 
-            <form onSubmit={handleSaveEdit} className="mt-6 space-y-5">
+            <form onSubmit={handleSaveEdit} className="mt-5 space-y-4 sm:space-y-5">
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700">
                   Title
@@ -273,19 +273,19 @@ export const PostDetails = ({
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-3 border-t border-slate-100 pt-5">
+              <div className="flex items-center justify-end gap-2.5 border-t border-slate-100 pt-4 sm:pt-5">
                 <button
                   type="button"
                   onClick={handleCloseEditModal}
                   disabled={isSubmitting}
-                  className="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:opacity-50"
+                  className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:opacity-50 sm:px-5"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 disabled:opacity-50"
+                  className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 disabled:opacity-50 sm:px-6"
                 >
                   {isSubmitting ? 'Saving...' : 'Save Changes'}
                 </button>
@@ -324,7 +324,7 @@ export const PostDetails = ({
                 type="button"
                 onClick={() => setIsDeleteModalOpen(false)}
                 disabled={isSubmitting}
-                className="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+                className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
               >
                 Cancel
               </button>
