@@ -12,55 +12,52 @@ export const App = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let isIgnored = false;
     const controller = new AbortController();
 
-    const loadPosts = async (): Promise<void> => {
+    const initMasterPosts = async () => {
       try {
         setIsLoading(true);
         setError(null);
 
-        const data = await fetchPosts(controller.signal);
+        const data = await fetchPosts(150, 0, controller.signal);
 
-        if (controller.signal.aborted) return;
-
-        setPosts(data.posts);
+        if (!isIgnored && !controller.signal.aborted) {
+          setPosts(data.posts);
+          setIsLoading(false);
+        }
       } catch (err: unknown) {
-        const isAbort =
-          controller.signal.aborted ||
-          (typeof err === 'object' &&
-            err !== null &&
-            'name' in err &&
-            (err as { name: string }).name === 'AbortError');
-
-        if (isAbort) return;
-
-        setError(err instanceof Error ? err.message : 'An unexpected error occurred');
-      } finally {
-        if (!controller.signal.aborted) {
+        if (!isIgnored && !controller.signal.aborted) {
+          setError(err instanceof Error ? err.message : 'An unexpected error occurred');
           setIsLoading(false);
         }
       }
     };
 
-    loadPosts();
+    initMasterPosts();
 
     return () => {
+      isIgnored = true;
       controller.abort();
     };
   }, []);
 
+  const handleHomeClick = () => {
+    setSelectedPostId(null);
+  };
+
   const handlePostCreated = (newPost: Post) => {
-    setPosts((prevPosts) => [newPost, ...prevPosts]);
+    setPosts((prev) => [newPost, ...prev]);
   };
 
   const handlePostUpdated = (updatedPost: Post) => {
-    setPosts((prevPosts) =>
-      prevPosts.map((post) => (post.id === updatedPost.id ? updatedPost : post)),
+    setPosts((prev) =>
+      prev.map((post) => (post.id === updatedPost.id ? { ...post, ...updatedPost } : post)),
     );
   };
 
   const handlePostDeleted = (deletedId: number) => {
-    setPosts((prevPosts) => prevPosts.filter((post) => post.id !== deletedId));
+    setPosts((prev) => prev.filter((post) => post.id !== deletedId));
     if (selectedPostId === deletedId) {
       setSelectedPostId(null);
     }
@@ -70,7 +67,7 @@ export const App = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
-      <Navbar onHomeClick={() => setSelectedPostId(null)} />
+      <Navbar onHomeClick={handleHomeClick} />
 
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         {selectedPostId !== null && activePost ? (

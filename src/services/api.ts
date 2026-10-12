@@ -8,8 +8,14 @@ import type {
 
 const BASE_URL = 'https://dummyjson.com';
 
-export const fetchPosts = async (signal?: AbortSignal): Promise<PostsResponse> => {
-  const response = await fetch(`${BASE_URL}/posts`, { signal });
+export const fetchPosts = async (
+  limit = 150,
+  skip = 0,
+  signal?: AbortSignal,
+): Promise<PostsResponse> => {
+  const response = await fetch(`${BASE_URL}/posts?limit=${limit}&skip=${skip}`, {
+    signal,
+  });
   if (!response.ok) {
     throw new Error(`Failed to fetch posts: ${response.statusText}`);
   }
@@ -25,20 +31,35 @@ export const fetchPostById = async (id: number, signal?: AbortSignal): Promise<P
 };
 
 export const createPost = async (payload: CreatePostPayload): Promise<Post> => {
-  const response = await fetch(`${BASE_URL}/posts/add`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
-  if (!response.ok) {
-    throw new Error(`Failed to create post: ${response.statusText}`);
+  try {
+    const response = await fetch(`${BASE_URL}/posts/add`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      return {
+        ...data,
+        id: data.id ?? Date.now(),
+        reactions: data.reactions ?? { likes: 0, dislikes: 0 },
+        views: data.views ?? 0,
+        tags: Array.isArray(data.tags) ? data.tags : [],
+      };
+    }
+  } catch {
+    // Graceful fallback to client-generated post
   }
-  const data = await response.json();
+
   return {
-    ...data,
-    reactions: data.reactions ?? { likes: 0, dislikes: 0 },
-    views: data.views ?? 0,
-    tags: Array.isArray(data.tags) ? data.tags : [],
+    id: Date.now(),
+    title: payload.title,
+    body: payload.body,
+    tags: payload.tags,
+    userId: payload.userId,
+    reactions: { likes: 0, dislikes: 0 },
+    views: 0,
   };
 };
 
@@ -54,37 +75,32 @@ export const updatePost = async (
       body: JSON.stringify(payload),
     });
 
-    if (response.status === 404) {
+    if (response.ok) {
+      const data = await response.json();
       return {
-        ...(currentPost ?? {
-          id,
-          title: '',
-          body: '',
-          tags: [],
-          reactions: { likes: 0, dislikes: 0 },
-          views: 0,
-          userId: 1,
-        }),
+        ...(currentPost ?? {}),
+        ...data,
         ...payload,
         id,
       };
     }
-
-    if (!response.ok) {
-      throw new Error(`Failed to update post: ${response.statusText}`);
-    }
-
-    return response.json();
-  } catch (error) {
-    if (currentPost) {
-      return {
-        ...currentPost,
-        ...payload,
-        id,
-      };
-    }
-    throw error;
+  } catch {
+    // Gracefully handle network issues / 404 for simulated IDs
   }
+
+  return {
+    ...(currentPost ?? {
+      id,
+      title: '',
+      body: '',
+      tags: [],
+      reactions: { likes: 0, dislikes: 0 },
+      views: 0,
+      userId: 1,
+    }),
+    ...payload,
+    id,
+  };
 };
 
 export const deletePost = async (id: number): Promise<DeletePostResponse> => {
@@ -93,36 +109,22 @@ export const deletePost = async (id: number): Promise<DeletePostResponse> => {
       method: 'DELETE',
     });
 
-    if (response.status === 404) {
-      return {
-        id,
-        title: '',
-        body: '',
-        tags: [],
-        reactions: { likes: 0, dislikes: 0 },
-        views: 0,
-        userId: 0,
-        isDeleted: true,
-        deletedOn: new Date().toISOString(),
-      };
+    if (response.ok) {
+      return await response.json();
     }
-
-    if (!response.ok) {
-      throw new Error(`Failed to delete post: ${response.statusText}`);
-    }
-
-    return response.json();
   } catch {
-    return {
-      id,
-      title: '',
-      body: '',
-      tags: [],
-      reactions: { likes: 0, dislikes: 0 },
-      views: 0,
-      userId: 0,
-      isDeleted: true,
-      deletedOn: new Date().toISOString(),
-    };
+    // Gracefully handle network issues / 404 for simulated IDs
   }
+
+  return {
+    id,
+    title: '',
+    body: '',
+    tags: [],
+    reactions: { likes: 0, dislikes: 0 },
+    views: 0,
+    userId: 0,
+    isDeleted: true,
+    deletedOn: new Date().toISOString(),
+  };
 };

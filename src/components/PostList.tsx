@@ -1,5 +1,11 @@
-import { useState } from 'react';
-import { HiOutlinePlus, HiOutlineX } from 'react-icons/hi';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  HiOutlineChevronLeft,
+  HiOutlineChevronRight,
+  HiOutlinePlus,
+  HiOutlineSearch,
+  HiOutlineX,
+} from 'react-icons/hi';
 import { createPost } from '../services/api';
 import type { Post } from '../types';
 import { PostCard } from './PostCard';
@@ -12,6 +18,8 @@ interface PostListProps {
   onPostCreated: (newPost: Post) => void;
 }
 
+const POSTS_PER_PAGE = 9;
+
 export const PostList = ({
   posts,
   isLoading,
@@ -19,17 +27,72 @@ export const PostList = ({
   onSelectPost,
   onPostCreated,
 }: PostListProps) => {
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [searchInput, setSearchInput] = useState<string>('');
+  const [debouncedQuery, setDebouncedQuery] = useState<string>('');
+
   const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
-  const [title, setTitle] = useState<string>('');
-  const [body, setBody] = useState<string>('');
-  const [tags, setTags] = useState<string>('');
+  const [newTitle, setNewTitle] = useState<string>('');
+  const [newBody, setNewBody] = useState<string>('');
+  const [newTags, setNewTags] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, []);
+
+  const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setSearchInput(val);
+
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    debounceTimerRef.current = setTimeout(() => {
+      setDebouncedQuery(val.trim());
+      setCurrentPage(1);
+    }, 350);
+  };
+
+  const handleClearSearch = () => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    setSearchInput('');
+    setDebouncedQuery('');
+    setCurrentPage(1);
+  };
+
+  const filteredPosts = useMemo(() => {
+    if (!debouncedQuery) return posts;
+    const q = debouncedQuery.toLowerCase();
+    return posts.filter(
+      (p) =>
+        p.title.toLowerCase().includes(q) ||
+        p.body.toLowerCase().includes(q) ||
+        p.tags.some((t) => t.toLowerCase().includes(q)),
+    );
+  }, [posts, debouncedQuery]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredPosts.length / POSTS_PER_PAGE));
+
+  const paginatedPosts = useMemo(() => {
+    const start = (currentPage - 1) * POSTS_PER_PAGE;
+    return filteredPosts.slice(start, start + POSTS_PER_PAGE);
+  }, [filteredPosts, currentPage]);
+
   const handleOpenModal = () => {
-    setTitle('');
-    setBody('');
-    setTags('');
+    setNewTitle('');
+    setNewBody('');
+    setNewTags('');
     setSubmitError(null);
     setIsCreateModalOpen(true);
   };
@@ -42,7 +105,7 @@ export const PostList = ({
 
   const handleCreatePost = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !body.trim()) {
+    if (!newTitle.trim() || !newBody.trim()) {
       setSubmitError('Title and body are required.');
       return;
     }
@@ -51,19 +114,20 @@ export const PostList = ({
       setIsSubmitting(true);
       setSubmitError(null);
 
-      const parsedTags = tags
+      const parsedTags = newTags
         .split(',')
         .map((tag) => tag.trim())
         .filter(Boolean);
 
       const created = await createPost({
-        title: title.trim(),
-        body: body.trim(),
+        title: newTitle.trim(),
+        body: newBody.trim(),
         tags: parsedTags,
         userId: 1,
       });
 
       onPostCreated(created);
+      setCurrentPage(1);
       setIsCreateModalOpen(false);
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : 'Failed to create post');
@@ -72,9 +136,25 @@ export const PostList = ({
     }
   };
 
+  const getPageNumbers = () => {
+    const pages: (number | string)[] = [];
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      if (currentPage > 3) pages.push('...');
+      const start = Math.max(2, currentPage - 1);
+      const end = Math.min(totalPages - 1, currentPage + 1);
+      for (let i = start; i <= end; i++) pages.push(i);
+      if (currentPage < totalPages - 2) pages.push('...');
+      pages.push(totalPages);
+    }
+    return pages;
+  };
+
   return (
     <div>
-      <header className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <header className="mb-8 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
             Community Posts
@@ -84,18 +164,55 @@ export const PostList = ({
           </p>
         </div>
 
-        <button
-          onClick={handleOpenModal}
-          className="inline-flex items-center gap-2 self-start rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 sm:self-auto"
-        >
-          <HiOutlinePlus className="h-5 w-5" />
-          Create Post
-        </button>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="relative w-full sm:w-72">
+            <HiOutlineSearch className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              value={searchInput}
+              onChange={handleSearchInputChange}
+              placeholder="Search posts..."
+              className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-9 text-sm text-slate-900 placeholder-slate-400 shadow-sm transition focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900"
+            />
+            {searchInput && (
+              <button
+                type="button"
+                onClick={handleClearSearch}
+                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+              >
+                <HiOutlineX className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+
+          <button
+            onClick={handleOpenModal}
+            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800"
+          >
+            <HiOutlinePlus className="h-5 w-5" />
+            Create Post
+          </button>
+        </div>
       </header>
+
+      {debouncedQuery && (
+        <div className="mb-6 flex items-center justify-between rounded-2xl border border-slate-200/80 bg-white px-4 py-3 text-sm text-slate-600 shadow-sm">
+          <span>
+            Search results for: <strong className="text-slate-900">"{debouncedQuery}"</strong>
+            {!isLoading && ` (${filteredPosts.length} found)`}
+          </span>
+          <button
+            onClick={handleClearSearch}
+            className="text-xs font-semibold text-slate-900 underline hover:text-slate-600"
+          >
+            Clear Search
+          </button>
+        </div>
+      )}
 
       {isLoading && (
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, index) => (
+          {Array.from({ length: POSTS_PER_PAGE }).map((_, index) => (
             <div
               key={`skeleton-${index}`}
               className="h-72 animate-pulse rounded-2xl border border-slate-200/60 bg-white p-6 shadow-sm"
@@ -121,18 +238,79 @@ export const PostList = ({
         </div>
       )}
 
-      {!isLoading && !error && posts.length === 0 && (
-        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-12 text-center text-slate-500">
-          <p className="text-lg font-medium">No posts available right now.</p>
+      {!isLoading && !error && filteredPosts.length === 0 && (
+        <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center text-slate-500 shadow-sm">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
+            <HiOutlineSearch className="h-6 w-6" />
+          </div>
+          <p className="mt-4 text-lg font-medium text-slate-700">
+            {debouncedQuery
+              ? `No posts found matching "${debouncedQuery}"`
+              : 'No posts available right now.'}
+          </p>
+          {debouncedQuery && (
+            <button
+              onClick={handleClearSearch}
+              className="mt-4 inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
+            >
+              Clear Search
+            </button>
+          )}
         </div>
       )}
 
-      {!isLoading && !error && posts.length > 0 && (
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {posts.map((post) => (
-            <PostCard key={post.id} post={post} onSelect={onSelectPost} />
-          ))}
-        </div>
+      {!isLoading && !error && paginatedPosts.length > 0 && (
+        <>
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {paginatedPosts.map((post) => (
+              <PostCard key={post.id} post={post} onSelect={onSelectPost} />
+            ))}
+          </div>
+
+          {totalPages > 1 && (
+            <nav className="mt-12 flex flex-wrap items-center justify-center gap-2">
+              <button
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <HiOutlineChevronLeft className="h-4 w-4" />
+                Previous
+              </button>
+
+              <div className="flex items-center gap-1">
+                {getPageNumbers().map((pageItem, idx) =>
+                  typeof pageItem === 'number' ? (
+                    <button
+                      key={pageItem}
+                      onClick={() => setCurrentPage(pageItem)}
+                      className={`h-9 w-9 rounded-xl text-sm font-semibold transition ${
+                        currentPage === pageItem
+                          ? 'bg-slate-900 text-white shadow-sm'
+                          : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                      }`}
+                    >
+                      {pageItem}
+                    </button>
+                  ) : (
+                    <span key={`dots-${idx}`} className="px-2 text-sm text-slate-400">
+                      ...
+                    </span>
+                  ),
+                )}
+              </div>
+
+              <button
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Next
+                <HiOutlineChevronRight className="h-4 w-4" />
+              </button>
+            </nav>
+          )}
+        </>
       )}
 
       {isCreateModalOpen && (
@@ -180,8 +358,8 @@ export const PostList = ({
                 <input
                   type="text"
                   placeholder="Enter post title..."
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
+                  value={newTitle}
+                  onChange={(e) => setNewTitle(e.target.value)}
                   required
                   className="mt-1.5 block w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-slate-900 shadow-sm focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900"
                 />
@@ -194,8 +372,8 @@ export const PostList = ({
                 <textarea
                   rows={5}
                   placeholder="Write your post content..."
-                  value={body}
-                  onChange={(e) => setBody(e.target.value)}
+                  value={newBody}
+                  onChange={(e) => setNewBody(e.target.value)}
                   required
                   className="mt-1.5 block w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-slate-900 shadow-sm focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900"
                 />
@@ -208,8 +386,8 @@ export const PostList = ({
                 <input
                   type="text"
                   placeholder="history, crime, fiction"
-                  value={tags}
-                  onChange={(e) => setTags(e.target.value)}
+                  value={newTags}
+                  onChange={(e) => setNewTags(e.target.value)}
                   className="mt-1.5 block w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-slate-900 shadow-sm focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900"
                 />
               </div>
