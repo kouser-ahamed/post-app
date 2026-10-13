@@ -37,3 +37,15 @@ export interface DeletePostResponse extends Post {
   isDeleted: boolean;
   deletedOn: string;
 }
+
+export interface PostFormData {
+  title: string;
+  body: string;
+  tags: string;
+}
+
+export interface PostFormErrors {
+  title?: string;
+  body?: string;
+  tags?: string;
+}
